@@ -323,7 +323,7 @@ void loop() {
   if (read_tpuart_frame()) {
      uint8_t b = MCU_SERIAL.read();
      //Parse từng byte để thêm vào queue
-     knx_tx_parse_tpuart(b);
+     knx_parse_MCU_byte(b);
   }
   // Nếu KNX đang rảnh → lấy frame từ queue ra gửi
 
