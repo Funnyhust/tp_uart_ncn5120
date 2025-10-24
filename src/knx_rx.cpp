@@ -1,6 +1,4 @@
 #include "config.h"
-#if KNX_RX_MODE
-
 
 #include "knx_rx.h"
 #include <Arduino.h>
@@ -132,4 +130,3 @@ void knx_timer_tick(void) {
     timer.pause();
   }
 }
-#endif

@@ -1,6 +1,7 @@
-#ifndef TPUART
-#define TPUART
+#ifndef TPUART_H
+#define TPUART_H
 #include <Arduino.h>
+#include "config.h"
 
 // internal commands, device specific
 #define U_RESET_REQ 0x01
@@ -96,11 +97,41 @@
 #define ACR0_FLAG_TRIGEN 0x08
 #define ACR0_FLAG_V20VCLIMIT 0x04
 
-typedef emum{
+typedef enum{
     TPUART_STATE_IDLE,
-    TPUART_STATE_RX,
+    TPUART_STATE_RX_START,
+    TPUART_STATE_RX_CTRL,
+    TPUART_STATE_RX_CONT,
+    TPUART_STATE_RX_LENGTH,
+    TPUART_STATE_RX_DATA,
+    TPUART_STATE_RX_CHECKSUM,
+    TPUART_STATE_RX_END,
     TPUART_STATE_TX,
-} tpuart_state;
+} tpuart_state_t;
+//TX
 
+#define MAX_QUEUE 50  // tối đa 5 frame chờ gửi
+struct Frame {
+  uint8_t data[KNX_BUFFER_MAX_SIZE];
+  uint8_t len;
+};
+
+extern Frame queue[MAX_QUEUE];
+extern volatile uint8_t q_head;
+extern volatile uint8_t q_tail;
+extern volatile uint8_t q_count;
+
+
+int parse_TPUART_frame(uint8_t *in, int len_in, uint8_t *buffer_out);
+
+// TX STATE
+void knx_tx_parse_tpuart(uint8_t byte);
+
+// Hàm thêm frame vào queue
+bool enqueue_frame(const uint8_t *data, uint8_t len);
+// Hàm lấy frame ra khỏi queue
+bool dequeue_frame(Frame *f);  
+
+//RX
 #endif
 

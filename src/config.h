@@ -5,11 +5,11 @@
 
 // Khai báo serial debug dùng chung
 extern HardwareSerial DEBUG_SERIAL;
-extern HardwareSerial HC_SERIAL;
+extern HardwareSerial MCU_SERIAL;
 
 // KNX Configuration - Cải thiện với constants rõ ràng
 #define KNX_TX_MODE 1 // 1: PWM, 0: OC
-#define KNX_RX_MODE 1 // 1: EXTI + Timer, 0: Input Capture + Timer
+#define KNX_RX_MODE 0 // 1: Gửi Frame, 0: Gửi Byte
 
 // Timing constants (microseconds)
 #define KNX_BIT_PERIOD_US 104
@@ -20,8 +20,9 @@ extern HardwareSerial HC_SERIAL;
 
 // Buffer sizes
 #define KNX_BUFFER_MAX_SIZE 23
-#define KNX_MAX_QUEUE_SIZE 50
 #define KNX_MAX_FRAME_LEN 23
+#define KNX_MAX_QUEUE_SIZE 50
+
 
 // UART Configuration
 #define UART_BAUD_RATE 19200
@@ -45,6 +46,12 @@ extern HardwareSerial HC_SERIAL;
 // Legacy Debug Configuration (deprecated - use logger instead)
 #define ENABLE_DEBUG_PRINTS 1
 #define ENABLE_ERROR_LOGGING 1
+
+#if 0
+#define FRAME_MODE
+#else
+#define BYTE_MODE
+#endif
 
 
 #endif

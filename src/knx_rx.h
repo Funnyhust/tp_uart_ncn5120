@@ -1,5 +1,4 @@
 #include "config.h"
-#if KNX_RX_MODE
 #ifndef KNX_RX_H
 #define KNX_RX_H
 
@@ -22,6 +21,4 @@ void knx_timer_tick(void);
 
 bool get_knx_rx_flag();
 
-
 #endif // STKNX_DRIVER_H
-#endif
