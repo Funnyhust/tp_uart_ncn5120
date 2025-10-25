@@ -1,10 +1,9 @@
-
-
 #include "knx_tx.h"
 #include "knx_rx.h"
 #include "config.h"
 #include <string.h> // For memset
 #include "logger.h"
+#include <tpuart/tpuart.h>
 extern "C" {
   #include "stm32f1xx_hal.h"
 }
@@ -89,27 +88,21 @@ knx_error_t knx_send_frame(uint8_t *data, int len) {
             LOG_DEBUG(LOG_CAT_SYSTEM, "KNX TX: Bus collision detected - aborting");
             return KNX_ERROR_BUS_BUSY;
         }
+        set_echo_frame(true); // Đánh dấu frame này là echo
+        HAL_StatusTypeDef status = HAL_TIM_PWM_Start_DMA(&htim3, TIM_CHANNEL_3, (uint32_t*)dma_buf, dma_len);
+
+        if (status != HAL_OK) {
+            LOG_DEBUG(LOG_CAT_SYSTEM, "KNX TX: DMA start failed %d\n", status);
+            return KNX_ERROR_BUS_BUSY;
+        }
+        return KNX_OK;
     }
-    // // Đợi Timer dừng hoàn toàn
-    // uint32_t timeout = millis() + 10; // 10ms timeout
-    // while (htim3.State != HAL_TIM_STATE_READY && millis() < timeout) {
-    //     delay(1);
-    //     LOG_DEBUG(LOG_CAT_SYSTEM, "Wait for Timer ready...");
-    // }
-    
-    // if (htim3.State != HAL_TIM_STATE_READY) {
-    //     LOG_DEBUG(LOG_CAT_SYSTEM, "KNX TX: Timer not ready");
-    //     return KNX_ERROR_BUS_BUSY;
-    // }
-    // Start DMA transmission
-    HAL_StatusTypeDef status = HAL_TIM_PWM_Start_DMA(&htim3, TIM_CHANNEL_3, (uint32_t*)dma_buf, dma_len);
-    
-    if (status != HAL_OK) {
-        LOG_DEBUG(LOG_CAT_SYSTEM, "KNX TX: DMA start failed %d\n", status);
+    else {
+        enqueue_frame(data, len);
         return KNX_ERROR_BUS_BUSY;
     }
     
-    return KNX_OK;
+
 }
 
 // ===== Callback khi DMA hoàn tất =====

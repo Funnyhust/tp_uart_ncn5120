@@ -97,18 +97,31 @@
 #define ACR0_FLAG_TRIGEN 0x08
 #define ACR0_FLAG_V20VCLIMIT 0x04
 
+// TX State
 typedef enum{
-    TPUART_STATE_IDLE,
-    TPUART_STATE_RX_START,
-    TPUART_STATE_RX_CTRL,
-    TPUART_STATE_RX_CONT,
-    TPUART_STATE_RX_LENGTH,
-    TPUART_STATE_RX_DATA,
-    TPUART_STATE_RX_CHECKSUM,
-    TPUART_STATE_RX_END,
-    TPUART_STATE_TX,
-} tpuart_state_t;
-//TX
+    TPUART_TX_IDLE,
+    TPUART_TX_START,
+    TPUART_TX_CTRL,
+    TPUART_TX_CONT,
+    TPUART_TX_LENGTH,
+    TPUART_TX_DATA,
+    TPUART_TX_CHECKSUM,
+    TPUART_TX_END,
+} tpuart_tx_state_t;
+
+//RX State
+typedef enum{
+    TPUART_RX_IDLE,
+    TPUART_RX_DATA,
+    TPUART_RX_LENGTH,
+    TPUART_RX_CHECKSUM,
+    TPUART_RX_ACK,
+    TPUART_RX_END,
+    TPUART_RX_END_ECHO,
+
+
+} tpuart_rx_state_t;
+
 
 #define MAX_QUEUE 50  // tối đa 5 frame chờ gửi
 struct Frame {
@@ -125,13 +138,25 @@ extern volatile uint8_t q_count;
 int parse_TPUART_frame(uint8_t *in, int len_in, uint8_t *buffer_out);
 
 // TX STATE
-void knx_tx_parse_tpuart(uint8_t byte);
+void knx_parse_MCU_byte(uint8_t byte);
 
 // Hàm thêm frame vào queue
 bool enqueue_frame(const uint8_t *data, uint8_t len);
 // Hàm lấy frame ra khỏi queue
-bool dequeue_frame(Frame *f);  
+bool dequeue_frame(Frame *f);
 
+void reset_tx_state();
+void set_tx_complete();
+void reset_rx_state();
+bool is_tx_complete();
+void set_echo_frame(bool is_echo);
+bool is_get_echo_frame();
+void reset_echo_frame();
+// RX STATE
+void knx_parse_BUS_byte(uint8_t byte);
+
+void reset_rx_state();
+bool is_rx_idle();
 //RX
 #endif
 

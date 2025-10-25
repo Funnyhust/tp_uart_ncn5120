@@ -1,3 +1,4 @@
+/*
 # 🔌 KNX Input Capture Decode - KNX Gateway System
 
 ## 📋 **TỔNG QUAN**
@@ -51,6 +52,7 @@ graph TD
 1. **UART Reception:**
    ```cpp
    // Nhận frame từ UART
+  
    if (read_uart_frame()) {
      // Validate frame
      frame_validation_result_t validation = validate_knx_frame(uart_rx_buf, total);
