@@ -156,6 +156,37 @@ void loop() {
 #endif
 
 
+static bool pending_uart_send = false;
+static uint32_t checksum_rx_time = 0;
+// Checksumdone xử lý tiếp
+  if(is_rx_checksum_done()) {
+    if(!pending_uart_send) {
+      checksum_rx_time = micros();
+      pending_uart_send = true;
+    }
+    if(micros() - checksum_rx_time >= 2600) {
+      pending_uart_send = false;
+      //-------------------------
+    if(is_get_echo_frame()){
+      // Đây là echo frame
+      MCU_SERIAL.write(L_DATA_CON);
+      reset_echo_frame();
+      reset_rx_checksum();
+    } else {
+      // Đây là frame thực sự từ bus
+      reset_rx_checksum();
+      Frame f;
+      if(dequeue_frame(&f)) {
+        LOG_HEX_DEBUG(LOG_CAT_KNX_RX, "Received frame from bus", f.data, f.len);
+        knx_parse_BUS_byte(f.data[0]); // Gọi hàm xử lý frame
+      } else {
+        LOG_DEBUG(LOG_CAT_KNX_RX, "No frame in queue to process after checksum done");
+      }
+    }
+    //-------------------------
+  }
+
+  }
 
 
 //KNX TX to bus============================================
@@ -199,12 +230,6 @@ if (ATOMIC_QUEUE_READ_COUNT()) {
   }
   }
 
-  // System health check and watchdog reload
-  // Debug send done count mỗi 2 giây
-  // static uint32_t last_debug_time = 0;
-  // if (millis() - last_debug_time >= 500) {
-  //   last_debug_time = millis();
-  //   LOG_INFO(LOG_CAT_KNX_TX, "%u", send_done_count);
-  // }
+
   system_health_check();
 }

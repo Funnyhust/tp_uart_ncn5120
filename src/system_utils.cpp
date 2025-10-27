@@ -30,7 +30,7 @@ void MX_NVIC_Init(void) {
 void system_init(void) {
     // Initialize serial ports
     DEBUG_SERIAL.begin(UART_BAUD_RATE, SERIAL_8E1);
-    MCU_SERIAL.begin(UART_BAUD_RATE);
+    MCU_SERIAL.begin(UART_BAUD_RATE, SERIAL_8E1);
     
     // Initialize watchdog
     //  IWatchdog.begin(WATCHDOG_TIMEOUT_US);

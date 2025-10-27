@@ -149,11 +149,17 @@ void reset_tx_state();
 void set_tx_complete();
 void reset_rx_state();
 bool is_tx_complete();
+
+// Echo frame handling
 void set_echo_frame(bool is_echo);
 bool is_get_echo_frame();
 void reset_echo_frame();
 // RX STATE
 void knx_parse_BUS_byte(uint8_t byte);
+
+void set_rx_checksum();
+void reset_rx_checksum();
+bool is_rx_checksum_done();
 
 void reset_rx_state();
 bool is_rx_idle();

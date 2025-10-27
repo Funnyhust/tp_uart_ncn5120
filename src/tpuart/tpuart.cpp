@@ -16,6 +16,16 @@ static uint8_t rx_buf_idx = 0;
 static uint8_t rx_buf_len = 0;
 static bool rx_checksum_byte=false;
 
+void set_rx_checksum() {
+    rx_checksum_byte = true;
+}
+void reset_rx_checksum() {
+    rx_checksum_byte = false;
+}
+bool is_rx_checksum_done() {
+    return rx_checksum_byte;
+}
+
 
 Frame queue[MAX_QUEUE];
 volatile uint8_t q_head = 0;
@@ -74,8 +84,8 @@ bool dequeue_frame(Frame *f) {
 
 tpuart_tx_state_t parse_tx_state = TPUART_TX_IDLE;
 
-void set_echo_frame(bool is_echo) {
-    is_echo_frame = is_echo;
+void set_echo_frame() {
+    is_echo_frame = true;
 }
 void reset_echo_frame() {
     is_echo_frame = false;
@@ -114,6 +124,7 @@ void knx_parse_MCU_byte(uint8_t byte) {
             break;
         case TPUART_TX_END:
             enqueue_frame(tx_buffer, tx_buf_idx);
+            set_echo_frame();
             parse_tx_state = TPUART_TX_IDLE;
             break;
     }
@@ -169,10 +180,6 @@ void reset_rx_state() {
     parse_rx_state = TPUART_RX_IDLE;
     rx_buf_idx = 0;
     rx_buf_len = 0;
-}
-
-bool is_rx_checksum_byte() {
-    return rx_checksum_byte;
 }
 
 

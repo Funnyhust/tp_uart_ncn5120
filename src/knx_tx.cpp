@@ -80,11 +80,13 @@ knx_error_t knx_send_frame(uint8_t *data, int len) {
     
     // Final bus collision check - đọc trực tiếp GPIO
     prepare_frame(data, len);
+
     uint8_t bus_level = get_knx_rx_flag();
     if (bus_level) {
         // Kiểm tra tín hiệu trên chân RX
         uint8_t rx_pin_level = (GPIOB->IDR & (1 << 6)) ? 1 : 0; // Giả sử chân RX là PA9
         if(rx_pin_level){ // Nếu chân RX vẫn cao thì bus vẫn bận
+            enqueue_frame(data, len);
             LOG_DEBUG(LOG_CAT_SYSTEM, "KNX TX: Bus collision detected - aborting");
             return KNX_ERROR_BUS_BUSY;
         }
@@ -101,8 +103,16 @@ knx_error_t knx_send_frame(uint8_t *data, int len) {
         enqueue_frame(data, len);
         return KNX_ERROR_BUS_BUSY;
     }
-    
+}
 
+knx_error_t knx_send_ack_byte() {
+    uint8_t ack_byte = 0xCC;
+    uint8_t rx_pin_level = (GPIOB->IDR & (1 << 6)) ? 1 : 0;
+    if(rx_pin_level){ // Nếu chân RX vẫn cao thì bus vẫn bận
+        LOG_DEBUG(LOG_CAT_SYSTEM, "KNX TX: Bus busy, cannot send ACK");
+        return KNX_ERROR_BUS_BUSY;
+    }
+    HAL_StatusTypeDef status = HAL_TIM_PWM_Start_DMA(&htim3, TIM_CHANNEL_3, (uint32_t*)&ack_byte, 1);
 }
 
 // ===== Callback khi DMA hoàn tất =====
