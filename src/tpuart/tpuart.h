@@ -151,7 +151,7 @@ void reset_rx_state();
 bool is_tx_complete();
 
 // Echo frame handling
-void set_echo_frame(bool is_echo);
+void set_echo_frame();
 bool is_get_echo_frame();
 void reset_echo_frame();
 // RX STATE
@@ -162,7 +162,6 @@ void reset_rx_checksum();
 bool is_rx_checksum_done();
 
 void reset_rx_state();
-bool is_rx_idle();
 //RX
 #endif
 

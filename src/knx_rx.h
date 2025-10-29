@@ -20,5 +20,5 @@ void knx_exti_irq(void);
 void knx_timer_tick(void);
 
 bool get_knx_rx_flag();
-
+bool send_ack_ok();
 #endif // STKNX_DRIVER_H

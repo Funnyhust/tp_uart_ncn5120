@@ -44,6 +44,19 @@ bool get_knx_rx_flag(){
   
   return false; // Bus rảnh
 }
+bool send_ack_ok(){
+
+  if (RX_flag) {
+    return true; // Bus bận
+  }
+  //Kiểm tra timer có đang chạy không
+  if (timer.isRunning()) {
+    return true; // Bus bận
+  }
+  
+  return false; // Bus rảnh
+}
+
 
 // Sử dụng cùng hàm checksum với main.cpp để đảm bảo consistency
 extern uint8_t knx_calc_checksum(const uint8_t *data, uint8_t len);

@@ -125,6 +125,7 @@ void knx_parse_MCU_byte(uint8_t byte) {
         case TPUART_TX_END:
             enqueue_frame(tx_buffer, tx_buf_idx);
             set_echo_frame();
+            reset_tx_state();
             parse_tx_state = TPUART_TX_IDLE;
             break;
     }
@@ -132,6 +133,7 @@ void knx_parse_MCU_byte(uint8_t byte) {
 void reset_tx_state() {
     parse_tx_state = TPUART_TX_IDLE;
     tx_buf_idx = 0;
+    memset(tx_buffer, 0, sizeof(tx_buffer));
 }
 
 
@@ -155,23 +157,25 @@ void knx_parse_BUS_byte(uint8_t byte) {
                 uint8_t calculated_length = 6 + data_length + 1 + 1;
                 rx_buf_len = calculated_length;
             }
-            if(rx_buf_idx == rx_buf_len-1) {
+            if(rx_buf_idx == rx_buf_len-2) {
+                MCU_SERIAL.write(byte);
                 parse_rx_state = TPUART_RX_CHECKSUM;
             } else {
                 rx_buf_idx ++;
                 MCU_SERIAL.write(byte);
-                parse_rx_state = TPUART_RX_DATA;
             }
             break;
         case TPUART_RX_CHECKSUM:
             //Checksum byte
             MCU_SERIAL.write(byte);
+            set_rx_checksum();
+            //Log thời gian nhận xong checksum
             rx_checksum_byte = true;
             parse_rx_state = TPUART_RX_ACK;
             break;
         case TPUART_RX_ACK:
             // Xử lý để sau
-            
+            reset_rx_state();
             parse_rx_state = TPUART_RX_IDLE;
             break;
     }

@@ -29,7 +29,7 @@ void MX_NVIC_Init(void) {
 // System initialization function
 void system_init(void) {
     // Initialize serial ports
-    DEBUG_SERIAL.begin(UART_BAUD_RATE, SERIAL_8E1);
+    DEBUG_SERIAL.begin(115200, SERIAL_8E1);
     MCU_SERIAL.begin(UART_BAUD_RATE, SERIAL_8E1);
     
     // Initialize watchdog

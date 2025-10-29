@@ -13,7 +13,7 @@ extern "C" {
 
 void knx_tx_init(void);                 // init TIM1 CH3 + DMA
 knx_error_t knx_send_frame(uint8_t *data, int len);
-
+knx_error_t knx_send_ack_byte();
 #ifdef __cplusplus
 }
 #endif

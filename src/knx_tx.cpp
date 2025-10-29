@@ -90,7 +90,7 @@ knx_error_t knx_send_frame(uint8_t *data, int len) {
             LOG_DEBUG(LOG_CAT_SYSTEM, "KNX TX: Bus collision detected - aborting");
             return KNX_ERROR_BUS_BUSY;
         }
-        set_echo_frame(true); // Đánh dấu frame này là echo
+        set_echo_frame(); // Đánh dấu frame này là echo
         HAL_StatusTypeDef status = HAL_TIM_PWM_Start_DMA(&htim3, TIM_CHANNEL_3, (uint32_t*)dma_buf, dma_len);
 
         if (status != HAL_OK) {
@@ -112,7 +112,12 @@ knx_error_t knx_send_ack_byte() {
         LOG_DEBUG(LOG_CAT_SYSTEM, "KNX TX: Bus busy, cannot send ACK");
         return KNX_ERROR_BUS_BUSY;
     }
-    HAL_StatusTypeDef status = HAL_TIM_PWM_Start_DMA(&htim3, TIM_CHANNEL_3, (uint32_t*)&ack_byte, 1);
+    if(send_ack_ok()){
+        LOG_DEBUG(LOG_CAT_SYSTEM, "KNX TX: Timer running, bus busy, cannot send ACK");
+        return KNX_ERROR_BUS_BUSY;
+    }
+    HAL_TIM_PWM_Start_DMA(&htim3, TIM_CHANNEL_3, (uint32_t*)&ack_byte, 1);
+    return KNX_OK;
 }
 
 // ===== Callback khi DMA hoàn tất =====
