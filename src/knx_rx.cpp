@@ -47,14 +47,14 @@ bool get_knx_rx_flag(){
 bool send_ack_ok(){
 
   if (RX_flag) {
-    return true; // Bus bận
+    return false; // Bus bận
   }
   //Kiểm tra timer có đang chạy không
   if (timer.isRunning()) {
-    return true; // Bus bận
+    return false; // Bus bận
   }
   
-  return false; // Bus rảnh
+  return true; // Bus rảnh
 }
 
 

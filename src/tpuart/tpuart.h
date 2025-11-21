@@ -67,7 +67,7 @@
 #define PARITY_BIT_ERROR 0x80
 #define CHECKSUM_LENGTH_ERROR 0x40
 #define TIMING_ERROR 0x20
-#define U_CONFIGURE_IND 0x0100000000000000000000000000
+#define U_CONFIGURE_IND 0x01
 #define U_CONFIGURE_MASK 0x83
 #define AUTO_ACKNOWLEDGE 0x20
 #define AUTO_POLLING 0x10
@@ -162,6 +162,12 @@ void reset_rx_checksum();
 bool is_rx_checksum_done();
 
 void reset_rx_state();
+
+// ACK handling functions
+bool is_pending_ack();
+void reset_pending_ack();
+uint8_t get_ack_value();
+
 //RX
 #endif
 

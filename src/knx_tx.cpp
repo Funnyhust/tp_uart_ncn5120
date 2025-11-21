@@ -61,20 +61,25 @@ static void prepare_frame(uint8_t *data, int len) {
 
 // ===== Public send function với error handling =====
 knx_error_t knx_send_frame(uint8_t *data, int len) {
+    DEBUG_SERIAL.print("Sending frame: ");
     // Input validation
     if (data == nullptr) {
         LOG_DEBUG(LOG_CAT_SYSTEM, "KNX TX: Invalid data pointer");
+        //DEBUG_SERIAL.println(1);
         return KNX_ERROR_INVALID_PARAM;
+
     }
     
     if (len <= 0 || len > KNX_BUFFER_MAX_SIZE) {
         LOG_DEBUG(LOG_CAT_SYSTEM, "KNX TX: Invalid length %d\n", len);
+        //DEBUG_SERIAL.println(2);
         return KNX_ERROR_INVALID_LENGTH;
     }
     
     // Kiểm tra DMA state
     if (hdma_tim3_ch3.State != HAL_DMA_STATE_READY) {
         LOG_DEBUG(LOG_CAT_SYSTEM, "KNX TX: DMA busy");
+        //DEBUG_SERIAL.println(3);
         return KNX_ERROR_BUS_BUSY;
     }
     
@@ -82,42 +87,57 @@ knx_error_t knx_send_frame(uint8_t *data, int len) {
     prepare_frame(data, len);
 
     uint8_t bus_level = get_knx_rx_flag();
-    if (bus_level) {
+    if (!bus_level) {
         // Kiểm tra tín hiệu trên chân RX
         uint8_t rx_pin_level = (GPIOB->IDR & (1 << 6)) ? 1 : 0; // Giả sử chân RX là PA9
         if(rx_pin_level){ // Nếu chân RX vẫn cao thì bus vẫn bận
             enqueue_frame(data, len);
             LOG_DEBUG(LOG_CAT_SYSTEM, "KNX TX: Bus collision detected - aborting");
+            //DEBUG_SERIAL.println(4);
             return KNX_ERROR_BUS_BUSY;
         }
         set_echo_frame(); // Đánh dấu frame này là echo
         HAL_StatusTypeDef status = HAL_TIM_PWM_Start_DMA(&htim3, TIM_CHANNEL_3, (uint32_t*)dma_buf, dma_len);
-
         if (status != HAL_OK) {
             LOG_DEBUG(LOG_CAT_SYSTEM, "KNX TX: DMA start failed %d\n", status);
+            //DEBUG_SERIAL.println(5);
             return KNX_ERROR_BUS_BUSY;
         }
         return KNX_OK;
     }
     else {
         enqueue_frame(data, len);
+        //DEBUG_SERIAL.println(6);
         return KNX_ERROR_BUS_BUSY;
     }
 }
 
-knx_error_t knx_send_ack_byte() {
-    uint8_t ack_byte = 0xCC;
+knx_error_t knx_send_ack_byte(uint8_t ack_value) {
+    static uint8_t ack_byte = 0;
+    switch(ack_value){
+        case U_ACK_REQ_ADRESSED:
+            ack_byte = 0xCC;
+        case U_ACK_REQ_NACK:
+            ack_byte = 0x0C;
+            break;
+        case U_ACK_REQ_BUSY:
+            ack_byte = 0xC0;
+            break;
+    }
     uint8_t rx_pin_level = (GPIOB->IDR & (1 << 6)) ? 1 : 0;
     if(rx_pin_level){ // Nếu chân RX vẫn cao thì bus vẫn bận
         LOG_DEBUG(LOG_CAT_SYSTEM, "KNX TX: Bus busy, cannot send ACK");
         return KNX_ERROR_BUS_BUSY;
     }
-    if(send_ack_ok()){
+    if(!send_ack_ok()){
         LOG_DEBUG(LOG_CAT_SYSTEM, "KNX TX: Timer running, bus busy, cannot send ACK");
         return KNX_ERROR_BUS_BUSY;
     }
+    if(is_pending_ack()){
     HAL_TIM_PWM_Start_DMA(&htim3, TIM_CHANNEL_3, (uint32_t*)&ack_byte, 1);
     return KNX_OK;
+    }
+    return KNX_ERROR_BUS_BUSY;
 }
 
 // ===== Callback khi DMA hoàn tất =====
