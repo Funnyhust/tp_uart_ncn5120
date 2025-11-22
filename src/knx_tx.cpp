@@ -90,8 +90,8 @@ knx_error_t knx_send_frame(uint8_t *data, int len) {
     if (!bus_level) {
         // Kiểm tra tín hiệu trên chân RX
         uint8_t rx_pin_level = (GPIOB->IDR & (1 << 6)) ? 1 : 0; // Giả sử chân RX là PA9
-        if(rx_pin_level){ // Nếu chân RX vẫn cao thì bus vẫn bận
-            enqueue_frame(data, len);
+        if(rx_pin_level && send_ack_ok()){ // Nếu chân RX vẫn cao thì bus vẫn bận
+            //enqueue_frame(data, len);
             LOG_DEBUG(LOG_CAT_SYSTEM, "KNX TX: Bus collision detected - aborting");
             //DEBUG_SERIAL.println(4);
             return KNX_ERROR_BUS_BUSY;

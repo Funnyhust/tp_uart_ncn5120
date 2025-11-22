@@ -126,23 +126,24 @@ void knx_parse_MCU_byte(uint8_t byte) {
                 tx_buf_idx = 0;
                 //DEBUG_SERIAL.println(1);
                 parse_tx_state = TPUART_TX_CTRL;
-                DEBUG_SERIAL.print(1);
+               // DEBUG_SERIAL.print(1);
                 break;
             }
             else if ((byte &0xF0) == U_ACK_REQ) {
-                //DEBUG_SERIAL.println(2);
-                pending_ack = true;
                 ack_value = byte&0x0F;
+                if(ack_value) {
+                pending_ack = true;
+                }
             }
-            DEBUG_SERIAL.print(3);
+           // DEBUG_SERIAL.print(3);
             break;
         case TPUART_TX_CTRL:
             tx_buffer[tx_buf_idx++] = byte;
             parse_tx_state = TPUART_TX_CONT;
-            DEBUG_SERIAL.print(4);
+            //DEBUG_SERIAL.print(4);
             break;
         case TPUART_TX_DATA:
-            DEBUG_SERIAL.print(5);
+          //  DEBUG_SERIAL.print(5);
             tx_buffer[tx_buf_idx++] = byte;
             parse_tx_state = TPUART_TX_CONT;
             break;  
@@ -161,11 +162,11 @@ void knx_parse_MCU_byte(uint8_t byte) {
         case TPUART_TX_CHECKSUM:
             tx_buffer[tx_buf_idx++] = byte;
             enqueue_frame(tx_buffer, tx_buf_idx);
-            DEBUG_SERIAL.print("Enqueued frame: ");
+           // DEBUG_SERIAL.print("Enqueued frame: ");
             for(int i=0; i<tx_buf_idx; i++) {
-              DEBUG_SERIAL.print(tx_buffer[i], HEX);
+              //DEBUG_SERIAL.print(tx_buffer[i], HEX);
             }
-            DEBUG_SERIAL.println();
+            //DEBUG_SERIAL.println();
 
             set_echo_frame();
             reset_tx_state();
@@ -229,16 +230,18 @@ void knx_parse_BUS_byte(uint8_t byte) {
                 is_extended_frame = false; // Standard frame
                 MCU_SERIAL.write(byte); // Forward control byte đầu
                 parse_rx_state = TPUART_RX_DATA;
+               // DEBUG_SERIAL.write(0XAA);
             } else if ((byte & L_DATA_MASK) == L_DATA_EXTENDED_IND) {
                 rx_buf_idx = 1;
                 rx_buf_len = 0;
                 is_extended_frame = true; // Extended frame
                 MCU_SERIAL.write(byte); // Forward control byte đầu
                 parse_rx_state = TPUART_RX_DATA;
+              //  DEBUG_SERIAL.write(0XBB);
             } else {
                 // Các control byte khác (L_ACKN_IND, L_DATA_CON, etc.) → forward ngay
                 MCU_SERIAL.write(byte);
-                // Không đổi state, vẫn ở RX_IDLE
+
             }
             break;
 
@@ -281,7 +284,7 @@ void knx_parse_BUS_byte(uint8_t byte) {
             rx_checksum_byte = true;
             
             // Kiểm tra xem có phải echo frame không
-            if (is_get_echo_frame()) {
+            if (is_get_echo_frame()&& pending_ack) {
                 parse_rx_state = TPUART_RX_END_ECHO;
             } else {
                 parse_rx_state = TPUART_RX_ACK;

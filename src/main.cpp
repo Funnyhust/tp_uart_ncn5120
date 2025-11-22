@@ -44,67 +44,65 @@ void setup() {
   LOG_INFO(LOG_CAT_SYSTEM, "KNX Gateway started (STM32) - No FreeRTOS");
 }
 
+static uint32_t last_byte_time = 0;
+static uint32_t checksum_rx_time = 0;
+static bool pending_uart_send = false;
+static uint32_t last_rx_time = 0;
+
 // =================== MAIN LOOP - POLLING TẤT CẢ ===================
 void loop() {
   // ========== 1. RX từ bus KNX (ISR đã set flag) ==========
   if (get_knx_rx_flag_safe()) {
+    if(micros() - last_rx_time > 2800) {
+      reset_rx_state();
+    }
     set_knx_rx_flag_safe(false);
     knx_parse_BUS_byte(Rx_byte);
+    last_rx_time = micros();
   }
 
 //============================================================================================
   // NOTE: ACK Timing - CRITICAL (1298-1500µs window) ==========
-  // static bool pending_uart_send = false;
-  // static uint32_t checksum_rx_time = 0;
-  
-  // if (is_rx_checksum_done()) {
-  //   if (!pending_uart_send) {
-  //     checksum_rx_time = micros();
-  //     pending_uart_send = true;
-  //   }
 
-  //   if (!is_get_echo_frame()) {
-  //     uint32_t elapsed = micros() - checksum_rx_time;
-      
-  //     // Window chính xác: 1298-1500µs
-  //     if (elapsed >= 104*13 && elapsed < 104*15) {
+  
+  if (is_pending_ack()) {
+    if (!pending_uart_send) {
+      checksum_rx_time = micros();
+      pending_uart_send = true;
+    }
+    if (!is_get_echo_frame()) {
+      uint32_t elapsed = micros() - checksum_rx_time;
+      // Window chính xác: 1298-1500µs
+      if (elapsed >= 104*13 && elapsed < 104*15) {
         
-  //       // Nếu có U_ACK_REQ từ MCU → gửi ACK xuống bus KNX
-  //       // Collision detection: knx_send_ack_byte() sẽ kiểm tra bus busy
-  //       if (is_pending_ack()) {
-  //         knx_send_ack_byte( get_ack_value()); 
-  //       }
-        
-  //       reset_rx_checksum();
-  //       reset_echo_frame();
-  //       pending_uart_send = false;
-  //     }
-  //     // Nếu quá 1500µs → timeout, reset
-  //     else if (elapsed >= 1500) {
-  //       reset_rx_checksum();
-  //       reset_echo_frame();
-  //       pending_uart_send = false;
-  //     }
-  //   }
-  // }
+        // Nếu có U_ACK_REQ từ MCU → gửi ACK xuống bus KNX
+        knx_send_ack_byte( get_ack_value());
+        pending_uart_send = false;
+      }
+      // Nếu quá 1500µs → timeout, reset
+      else if (elapsed >= 104*15) {
+        reset_pending_ack();
+        pending_uart_send = false;
+      }
+    }
+  }
 //============================================================================================
 
 
 
 
   // ========== 3. UART từ MCU (polling) ==========
-  static uint32_t last_byte_time = 0;
+
   
   if (MCU_SERIAL.available()) {
-    uint32_t now = micros();
     // Nếu gap > 5ms → reset TX state (frame mới)
-    if (now - last_byte_time > 2600) {
+    if (micros() - last_byte_time > 2600) {
       reset_tx_state();
     }
 
     uint8_t b = MCU_SERIAL.read();
     knx_parse_MCU_byte(b);
-    last_byte_time = now;
+    last_byte_time = micros();
   }
 
   // ========== 4. KNX TX: gửi frame nếu queue có dữ liệu ==========
@@ -116,7 +114,7 @@ void loop() {
     // DEBUG_SERIAL.println(ATOMIC_QUEUE_READ_COUNT());
     if (!get_knx_rx_flag()) {
       if (!waiting_backoff) {
-        backoff_time = millis() + random_num(3, 5);
+        backoff_time = millis() + random_num(2, 3);
         waiting_backoff = true;
       } else if (millis() >= backoff_time) {
         if (!get_knx_rx_flag()) {
